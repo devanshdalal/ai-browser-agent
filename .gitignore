@@ -1,0 +1,13 @@
+
+*.jpg
+*.jpeg
+*.png
+*.gif
+
+venv/*
+
+
+.cache/*
+
+.idea/*
+uploads/*
