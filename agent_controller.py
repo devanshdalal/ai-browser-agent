@@ -29,16 +29,6 @@ def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-# scroll_ins = """
-#             5. **Scrolling Down a Page**:
-#             - If you need to scroll down the current webpage, use this JSON format:
-#             ```json
-#             { "action": "scroll" }
-#             ```
-#
-#             - Always scroll to the end of the page before compiling your final result.
-# """
-
 messages = [{
     "role": "system",
     "content": """
@@ -53,29 +43,35 @@ messages = [{
             Always respond in strict json format only. 
             For each instruction, give a human readable description of what you are doing as well.
 
-
-            2. **Clicking Links**: 
+            2. **Navigating to Specific URLs**: 
+            - To go directly to a specific URL, respond with this JSON format: 
+            ```json 
+            { "action": "navigate", "url": "https://example.com", "description": "describe the action"} 
+            ``` 
+            
+            3. **Clicking Links**: 
             Identify links/buttons. 
             To click a link, respond in the following JSON format: 
             ```json 
             { "action": "click", "text": "Link Text", "description": "describe the action"}
             ``` 
-            Be precise and do not guess link names. 
+            Be precise and do not guess link names.
 
-
-            3. **Navigating to Specific URLs**: 
-            - To go directly to a specific URL, respond with this JSON format: 
-            ```json 
-            { "action": "navigate", "url": "https://example.com", "description": "describe the action"} 
-            ``` 
-
-            4. **Typing in Input Boxes**: 
-            - To type in an input box element, respond with this JSON format:
+            
+            4. **Scrolling Down a Page**:
+            - If you need to scroll down the current webpage, use this JSON format:
+            ```json
+            { "action": "scroll", "description": "describe the action"}
+            ```
+            - Always scroll to the end of the page before compiling your final result.
+            
+            5. **Typing in Input Boxes**: 
+            - To type in an input box bounded by a green box in the screenshot, respond with this JSON format:
             - Do not guess the input box's placeholder text. 
             ```json 
             { "action": "type_input", “placeholder”: “exact placeholder text in the input box”, "text": "Search Query",
             "description": "describe the action"} 
-            ``` 
+            ```
 
             6. **Compiling Results**: 
             - Continue browsing iteratively until you find the answer to the user's question.
