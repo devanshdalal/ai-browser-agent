@@ -1,4 +1,4 @@
-from utils import extract_json1, extract_json
+from assistant import WebpageNavigatorAssistant
 
 json = """
 ```json
@@ -9,4 +9,7 @@ json = """
 ```
 """
 
-print(extract_json(json))
+controller = WebpageNavigatorAssistant()
+
+controller.next_instruction(None,
+                            "What are some of the Vivo phones listed on smartprix.com?")
