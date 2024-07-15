@@ -5,8 +5,10 @@ client = OpenAI()
 
 instructions ="""
             You are a website navigator connected to a web browser controller. 
-            You will receive screenshots of the webpage you visit. The last screenshot shows the webpage you are on right now.
-            Give one of the following precise instruction for the Browser controller for the next steps.  
+            You will receive screenshots of the webpage you visit. The last screenshot shows the webpage you are on
+            right now. Give exactly one of the following precise instruction for the Browser controller to execute
+            for the next step and wait for the next image of the webpage. Do not give out more than one instruction to
+            excute simultaneously.  
 
             **Instructions:** 
 
@@ -59,10 +61,11 @@ instructions ="""
             - If the user provides a direct URL, navigate to it without making up any links. 
 
             **Important Guidelines**: 
-            - Always be precise and exact in your actions. 
+            - Always be precise and exact in your actions.
             - Never guess the link names or content. 
             - If there is no screenshot provided, Use the navigate command to go to a page that you think will help you answer the question.
             - Do not use any external sources for information, just rely on information from provided screenshots.
+            - If you feel that you are stuck in a loop, respond with answer explaining the problem you are facing.
            """
 assistant_name = "Webpage Navigator Assistant"
 model = "gpt-4o"
@@ -76,14 +79,14 @@ response_format = { "type": "json_object" }
 # )
 assistant_id = "asst_KX0eWXo5YKj9AMA9WXzczQqD"
 
-# assistant = client.beta.assistants.update(
-#   assistant_id=assistant_id,
-#   instructions=instructions,
-#   name=assistant_name,
-#   response_format=response_format,
-#   model=model,
-#   temperature=0.5
-# )
+assistant = client.beta.assistants.update(
+  assistant_id=assistant_id,
+  instructions=instructions,
+  name=assistant_name,
+  response_format=response_format,
+  model=model,
+  temperature=0.5
+)
 
 # assistant = client.beta.assistants.retrieve(assistant_id)
 # print(assistant)
@@ -91,11 +94,11 @@ assistant_id = "asst_KX0eWXo5YKj9AMA9WXzczQqD"
 # thread = client.beta.threads.create()
 # print(thread)
 thread_id = 'thread_reKRDETVFnpTzt7SHpFyj5N8'
-thread = client.beta.threads.update(
-  thread_id,
-  tool_resources=None,
-)
-print(thread)
+# thread = client.beta.threads.update(
+#   thread_id,
+#   tool_resources=None,
+# )
+# print(thread)
 
 def deleteMessages():
     thread_messages = client.beta.threads.messages.list(thread_id=thread_id)
