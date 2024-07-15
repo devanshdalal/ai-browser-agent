@@ -3,6 +3,7 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+from chat_controller import ChatController
 from agent_controller import AgentController
 from assistant import WebpageNavigatorAssistant
 from utils import working_dir, screenshot_file
@@ -12,17 +13,20 @@ UPLOAD_FOLDER = working_dir()
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 CORS(app)  # This will enable CORS for all routes
 
-agent_controller = AgentController()
-assistant = WebpageNavigatorAssistant()
+# agent_controller = AgentController()
+# assistant = WebpageNavigatorAssistant()
+chat_controller = ChatController()
 
 
 @app.route('/instructions', methods=['POST'])
 def upload_screenshot():
     prompt = request.form.get("prompt")
-    if not prompt.strip():
-        return jsonify({'error': 'No prompt provided'}), 400
-    if 'screenshot' not in request.files:
-        ins = assistant.next_instruction(None, prompt)
+    is_prompt_empty = (prompt is None) or (not prompt.strip())
+    is_screenshot_empty = 'screenshot' not in request.files
+    if is_prompt_empty and is_screenshot_empty:
+        return jsonify({'error': 'Both prompt and webpage screenshot cannot be skipped'}), 400
+    if is_screenshot_empty:
+        ins = chat_controller.next_instruction(None, prompt)
         return jsonify({'instructions': [ins]}), 200
 
     file = request.files['screenshot']
@@ -31,7 +35,7 @@ def upload_screenshot():
 
     filepath = os.path.join(UPLOAD_FOLDER, screenshot_file())
     file.save(filepath)
-    ins = assistant.next_instruction(filepath, prompt)
+    ins = chat_controller.next_instruction(filepath, prompt)
     return jsonify({'message': 'File successfully uploaded', 'name': file.filename,
                     'instructions': [ins]}), 200
 

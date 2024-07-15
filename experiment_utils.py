@@ -1,4 +1,5 @@
 from assistant import WebpageNavigatorAssistant
+from chat_controller import ChatController
 
 json = """
 ```json
@@ -9,7 +10,9 @@ json = """
 ```
 """
 
-controller = WebpageNavigatorAssistant()
+controller = ChatController()
 
-controller.next_instruction(None,
-                            "What are some of the Vivo phones listed on smartprix.com?")
+response = controller.next_instruction(None,
+                            "Using google, tell me the minimum price of Irfc in the past 6 months?")
+
+print('response', response)
