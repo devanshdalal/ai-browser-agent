@@ -1,10 +1,14 @@
 import base64
+import logging
 import os
 
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
 from utils import extract_json
+
+log = logging.getLogger('urllib3')
+log.setLevel(logging.DEBUG)
 
 MODEL = "gpt-4o"
 api_key = os.environ['OPENAI_API_KEY']
@@ -22,21 +26,21 @@ def encode_image(image_path):
 
 
 SYSTEM = """
-You are a website navigator connected to a web browser controller. Your task is to provide next instruction for the controller, eventually reaching user's target. You will receive screenshot of the webpage you visit. You start on a blank page and the last screenshot is of webpage you are on right now. Produce exactly one of the following precise instruction for the web browser controller to execute as the next step and wait for the next image of the webpage. Always respond in strict json format only. Give a human readable description of the instruction as well. Select ONLY one instruction from the below instruction set.
+You are a website navigator connected to a web browser controller. Your task is to provide next instruction for the controller, eventually reaching user's target. You will receive screenshot(s) of the webpage you visit. You start on a blank page and the last screenshot is of webpage you are on right now. Produce exactly one of the following precise instruction for the web browser controller to execute as the next step and wait for the next image of the webpage. Always respond in strict json format only. Give a human readable description of the instruction as well. Select ONLY one instruction from the below instruction set.
 
 **Instruction Set:**
 
 1. **Navigating to Specific URLs**: 
 - To go directly to a specific URL, respond with the following instruction: 
 ```json 
-{ "action": "navigate", "url": "https://example.com", "description": "describe the action"} 
+{ "action": "navigate", "url": "https://example.com", "description": "describe the action on what you are doing"} 
 ``` 
 
 2. **Clicking Links**: 
 Identify links/buttons. 
 To click a link, respond with the following instruction: 
 ```json 
-{ "action": "click", "text": "Link Text", "description": "describe the action"}
+{ "action": "click", "text": "Link Text", "description": "describe the action on what you are doing"}
 ``` 
 Be precise and do not guess link names.
 
@@ -44,7 +48,7 @@ Be precise and do not guess link names.
 3. **Scrolling Down a Page**:
 - If you need to scroll down the current webpage, reply with the following instruction:
 ```json
-{ "action": "scroll", "description": "describe the action"}
+{ "action": "scroll", "description": "describe the action on what you are doing"}
 ```
 - Maybe scroll to the end of the page before compiling your final result.
 
@@ -52,7 +56,7 @@ Be precise and do not guess link names.
 - To type in an input box bounded by a green box in the screenshot, respond with the following instruction:
 ```json 
 { "action": "type_input", "placeholder": "exact placeholder text in the input box", "text": "Search Query",
-"description": "describe the action"} 
+"description": "describe the action on what you are doing"} 
 ```
 - Do not guess the input box's placeholder text value. 
 
@@ -71,8 +75,9 @@ Be precise and do not guess link names.
 - Never guess the instruction. ALWAYS wait for the controller to acknowledge before giving the next instruction.
 - If there is no screenshot provided, Use the 'navigate' instruction for browser to go to any page.
 - Do not provide any information from your memory. Always use the information from the screenshot provided. DO NOT use any information that is not present in the screenshot.
-- If you feel that you are stuck in a loop, respond with answer explaining the problem you are facing.
+- If you observe that assistant is stuck in giving same instructions again and again, respond with answer explaining the problem you are facing.
 """
+
 examples = """
 **Examples**:
 instruction: Buy me a smartphone from amazon.in
@@ -106,12 +111,11 @@ class ChatController:
             "Authorization": f"Bearer {api_key}"
         }
         self._requests_session = requests.Session()
-        retries = Retry(total=3, backoff_factor=2, status_forcelist=[500, 502, 503, 504])
+        retries = Retry(total=3, backoff_factor=2, status_forcelist=[500, 502, 503, 504], allowed_methods=["POST"])
         self._requests_session.mount('http://', HTTPAdapter(max_retries=retries))
         self._messages = self._init_messages()
 
     def next_instruction(self, screenshot_path: str, user_prompt: str) -> dict:
-        print("User Prompt:", user_prompt, len(self._messages))
         if screenshot_path is None and user_prompt is None:
             raise ValueError("Both prompt and screenshot are empty")
         if screenshot_path is None:
@@ -143,7 +147,7 @@ class ChatController:
             return {"action": "answer", "reply": res_text}
         self._append_message(img=None, role="assistant", prompt=res_text)
 
-        self._truncate(last_k=0)
+        self._truncate(last_k=1)
 
         return json_str
 
@@ -160,7 +164,7 @@ class ChatController:
             content.append(
                 {
                     "type": "image_url",
-                    "image_url": {'url': f"data:image/jpeg;base64,{img}"},
+                    "image_url": {'url': f"data:image/jpeg;base64,{img}", "detail": "high"},
                 }
             )
         if content:
@@ -183,7 +187,7 @@ class ChatController:
                 retain.append(m)
             elif _is_prompt_containing(m):
                 retain.append(m)
-            elif m['role'] == 'assistant' and scroll_active:
+            elif scroll_active:
                 retain.append(m)
             elif m['role'] == 'system':
                 retain.append(m)
