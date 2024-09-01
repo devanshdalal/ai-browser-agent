@@ -1,5 +1,6 @@
 # ai-browser-agent
 
+[Design Document for AI Browser Agent](https://docs.google.com/document/d/139cMeAABHIVR7EDBsZtKkIuUMqjDZ_Lmd9OwdbrEB1A/edit?usp=sharing)
 
 
 https://github.com/user-attachments/assets/2f0086f3-1a54-4618-8d6f-ccee412e2e27
